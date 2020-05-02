@@ -2,7 +2,7 @@ import numpy as np
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+import pandas as pd
 USER_COUNT = 40
 # WORDS_COUNT = TRAIN_SEGMENT_COUNT
 WORDS_COUNT_PER_SEGMENT = 100
@@ -43,14 +43,11 @@ def build_word_dict():
         commends_dict[line[:-1]] = 0
     return commends_dict
 
-
 def count_word_occurrence(segment):
     d = build_word_dict()
     for word in segment:
         if word in d:
             d[word] = d[word] + 1
-        else:
-            d[word] = 1
     return d
 
 
@@ -58,8 +55,8 @@ def build_train_set():
     train_set = separate_user_to_segment(0)[:TRAIN_SEGMENT_COUNT]
     train_labels = list(np.zeros(TRAIN_SEGMENT_COUNT))
     for user_id in range(1, USER_COUNT):
-        train_set.extend(separate_user_to_segment(user_id)[:TRAIN_SEGMENT_COUNT])
-        train_labels.extend(list(np.ones(TRAIN_SEGMENT_COUNT)))
+        train_set.append(separate_user_to_segment(user_id)[0])
+        train_labels.append(1)
     return train_set, train_labels
 
 
@@ -68,13 +65,18 @@ def build_test_set():
 
 
 def main():
-
     train_set , train_labels = build_train_set()
     text_clf = RandomForestClassifier(n_estimators=100)
-    text_clf.fit(np.array(train_set), np.array(train_labels))
+    commends = list(build_word_dict().keys())
+    X_train = pd.DataFrame(data=train_set, columns = commends)
+    print(X_train)
+    text_clf.fit(X_train, train_labels)
     test_set = build_test_set()
-    predicted = text_clf.predict(np.array(train_set))
+    X_test = pd.DataFrame(data=test_set, columns = commends)
+    predicted= text_clf.predict(X_test)
     print(predicted)
-
+    predicted = pd.DataFrame(predicted)
+    predicted = predicted.T
+    predicted.to_csv("predicted.csv")
 
 main()
