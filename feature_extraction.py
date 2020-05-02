@@ -5,22 +5,35 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 
 USER_COUNT = 40
-# WORDS_COUNT = TRAIN_SEGMENT_COUNT
 WORDS_COUNT_PER_SEGMENT = 100
 SEGMENT_COUNT = 150
 TRAIN_SEGMENT_COUNT = 50
 
-'''
-def get_fifty_segments():
-    users_lines = []
+
+def tidf_n_grams():
+    words_per_user = []
     for i in range(0, USER_COUNT):
-        f = open("FraudedRawData/User" + str(i), "r")
-        lines = ""
-        for j in range(0, WORDS_COUNT):
-            lines += f.readline()[:-1] + ' '
-        users_lines.append(lines[:-1])
-    return users_lines
-'''
+        file_of_user = open("FraudedRawData/User" + str(i), "r")
+        n_gram_str = ""
+        for j in range(0, WORDS_COUNT_PER_SEGMENT * SEGMENT_COUNT):
+            n_gram = file_of_user.readline()[:-1]
+            n_gram = n_gram + file_of_user.readline()[:-1]
+            n_gram = n_gram + file_of_user.readline()[:-1]
+            n_gram_str = n_gram_str + n_gram + " "
+        words_per_user.append(n_gram_str[:-1])
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(words_per_user)
+    dense = X.todense()
+    denselist = dense.tolist()
+    return pd.DataFrame(denselist, columns=vectorizer.get_feature_names())
+
+
+def best_ngrams(user_id, n_grams_tidf):
+    fituer_number = 1000
+    print(n_grams_tidf.iloc[user_id:, ])
+
+    #user_top_n_grams = user_n_grams[:fituer_number]
+    #print(user_top_n_grams)
 
 
 # returns an array with the number of occurrence of each word in each segment
@@ -82,8 +95,8 @@ def train_model(user_id):
 
 
 def main():
-    for i in range(0, 10):
-        train_model(i)
+    tidf_n_grams()
+    best_ngrams(0, tidf_n_grams())
 
 
 main()
