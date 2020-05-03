@@ -4,8 +4,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 
-USER_COUNT = 4
-WORDS_COUNT_PER_SEGMENT = 10
+USER_COUNT = 40
+WORDS_COUNT_PER_SEGMENT = 100
 SEGMENT_COUNT = 150
 TRAIN_SEGMENT_COUNT = 50
 
@@ -40,18 +40,19 @@ def separate_user_to_segment_feature_1(user_id):
 
 
 # feature 2 - 3grams of commands taking the best 1000 according to tidf
-
 # returns 3grams commands tf-idf for each user
 def tidf_n_grams():
     words_per_user = []
     for i in range(0, USER_COUNT):
         file_of_user = open("FraudedRawData/User" + str(i), "r")
         n_gram_str = ""
-        for j in range(0, WORDS_COUNT_PER_SEGMENT * TRAIN_SEGMENT_COUNT):
-            n_gram = file_of_user.readline()[:-1]
-            n_gram = n_gram + file_of_user.readline()[:-1]
-            n_gram = n_gram + file_of_user.readline()[:-1]
-            n_gram_str = n_gram_str + n_gram + " "
+        n_gram_1 = file_of_user.readline()[:-1]
+        n_gram_2 = file_of_user.readline()[:-1]
+        for j in range(2, WORDS_COUNT_PER_SEGMENT * TRAIN_SEGMENT_COUNT):
+            n_gram_3 = file_of_user.readline()[:-1]
+            n_gram_str = n_gram_str + n_gram_1 + n_gram_2 + n_gram_3 + " "
+            n_gram_1 = n_gram_2
+            n_gram_2 = n_gram_3
         words_per_user.append(n_gram_str[:-1])
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(words_per_user)
@@ -81,15 +82,17 @@ def build_word_dict_feature_2(best_ngrams):
 # returns an array with the number of occurrence of each word in each segment of specific user
 def separate_user_to_segment_feature_2(user_id, n_grams_tidf):
     user_segments = []
-    file_of_user = open("FraudedRawData/User" + str(user_id), "r")
     top_ngrams = best_ngrams(user_id, n_grams_tidf)
+    file_of_user = open("FraudedRawData/User" + str(user_id), "r")
     for i in range(0, SEGMENT_COUNT):
         lines = []
-        for j in range(0, WORDS_COUNT_PER_SEGMENT):
-            n_gram = file_of_user.readline()[:-1]
-            n_gram = n_gram + file_of_user.readline()[:-1]
-            n_gram = n_gram + file_of_user.readline()[:-1]
-            lines.append(n_gram)
+        n_gram_1 = file_of_user.readline()[:-1]
+        n_gram_2 = file_of_user.readline()[:-1]
+        for j in range(2, WORDS_COUNT_PER_SEGMENT):
+            n_gram_3 = file_of_user.readline()[:-1]
+            lines.append(n_gram_1 + n_gram_2 + n_gram_3)
+            n_gram_1 = n_gram_2
+            n_gram_2 = n_gram_3
         dict = build_word_dict_feature_2(top_ngrams)
         segment_words_count = list(count_word_occurrence(dict, lines).values())
         user_segments.append(segment_words_count)
@@ -105,7 +108,8 @@ def get_all_features_of_all_users(tidf_grams):
         features_2 = separate_user_to_segment_feature_2(user_id, tidf_grams)
         all_features = []
         for i in range(0, SEGMENT_COUNT):
-            all_features.append(features_1[i].extend(features_2[i]))
+            features_1[i].extend(features_2[i])
+            all_features.append(features_1[i])
         all_features_of_all_users.append(all_features)
     return all_features_of_all_users
 
@@ -116,7 +120,7 @@ def build_train_set(user_id, all_features_of_all_users):
     train_labels = list(np.zeros(TRAIN_SEGMENT_COUNT))
     for other_user in range(0, USER_COUNT):
         if other_user != user_id:
-            train_set.append(all_features_of_all_users[other_user][:segments_of_other_users]) #taking two segemnts from each other user
+            train_set.extend(all_features_of_all_users[other_user][:segments_of_other_users]) #taking two segemnts from each other user
             train_labels.extend(list(np.ones(segments_of_other_users)))
     return train_set, train_labels
 
