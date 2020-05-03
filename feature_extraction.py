@@ -98,7 +98,7 @@ def separate_user_to_segment_feature_2(user_id, n_grams_tidf):
 
 
 
-def get_all_features_of_all_users():
+def get_all_features_of_all_users(tidf_grams):
     all_features_of_all_users = []
     for user_id in range(0, USER_COUNT):
         features_1 = separate_user_to_segment_feature_1(user_id)
@@ -117,7 +117,7 @@ def build_train_set(user_id, all_features_of_all_users):
     for other_user in range(0, USER_COUNT):
         if other_user != user_id:
             train_set.append(all_features_of_all_users[other_user][:segments_of_other_users]) #taking two segemnts from each other user
-            train_labels.append(list(np.ones(segments_of_other_users)))
+            train_labels.extend(list(np.ones(segments_of_other_users)))
     return train_set, train_labels
 
 def train_model(user_id, all_features_of_all_users):
@@ -126,11 +126,9 @@ def train_model(user_id, all_features_of_all_users):
     test_set = all_features_of_id[TRAIN_SEGMENT_COUNT:SEGMENT_COUNT]
     text_clf = RandomForestClassifier(n_estimators=100)
 
-    commends = list(build_word_dict().keys())
-    X_train = pd.DataFrame(data=train_set, columns=commends)
+    X_train = pd.DataFrame(data=train_set)
     text_clf.fit(X_train, train_labels)
-    test_set = build_test_set(user_id)
-    X_test = pd.DataFrame(data=test_set, columns=commends)
+    X_test = pd.DataFrame(data=test_set)
     predicted = text_clf.predict(X_test)
     print(predicted)
     predicted = pd.DataFrame(predicted)
@@ -141,5 +139,5 @@ def train_model(user_id, all_features_of_all_users):
 if __name__ == "__main__":
     tidf_grams = tidf_n_grams()
     all_features_of_all_users = get_all_features_of_all_users(tidf_grams)
-    train_model(0, tidf_grams)
+    train_model(0, all_features_of_all_users)
 
