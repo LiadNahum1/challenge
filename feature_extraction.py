@@ -1,5 +1,7 @@
+import collections
+
 import numpy as np
-from sklearn import metrics
+from sklearn import metrics, svm, linear_model
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
@@ -8,7 +10,9 @@ USER_COUNT = 40
 WORDS_COUNT_PER_SEGMENT = 100
 SEGMENT_COUNT = 150
 TRAIN_SEGMENT_COUNT = 50
-
+feature_number = 1000
+segments_of_other_users = 2
+num_of_estimatiors = 80
 # returns a dictinary of the words in dict with the occurance of them in specific segment
 def count_word_occurrence(dict, segment):
     for word in segment:
@@ -63,7 +67,6 @@ def tidf_n_grams():
 
 # taking top 1000 ngrams for specific user
 def best_ngrams(user_id, n_grams_tidf):
-    feature_number = 1000
     columns = []
     for i in range(0, USER_COUNT):
         columns.append(f'user_{i}')
@@ -114,7 +117,6 @@ def get_all_features_of_all_users(tidf_grams):
     return all_features_of_all_users
 
 def build_train_set(user_id, all_features_of_all_users):
-    segments_of_other_users = 2
     all_features_of_id = all_features_of_all_users[user_id]
     train_set = all_features_of_id[:TRAIN_SEGMENT_COUNT]
     train_labels = list(np.zeros(TRAIN_SEGMENT_COUNT))
@@ -128,20 +130,23 @@ def train_model(user_id, all_features_of_all_users):
     all_features_of_id = all_features_of_all_users[user_id]
     train_set, train_labels = build_train_set(user_id, all_features_of_all_users)
     test_set = all_features_of_id[TRAIN_SEGMENT_COUNT:SEGMENT_COUNT]
-    text_clf = RandomForestClassifier(n_estimators=100)
+    text_clf = RandomForestClassifier(n_estimators=num_of_estimatiors)
 
     X_train = pd.DataFrame(data=train_set)
     text_clf.fit(X_train, train_labels)
     X_test = pd.DataFrame(data=test_set)
     predicted = text_clf.predict(X_test)
+    print(user_id)
     print(predicted)
+    print(collections.Counter(predicted))
     predicted = pd.DataFrame(predicted)
     predicted = predicted.T
-    predicted.to_csv("predicted.csv", mode='a')
+    predicted.to_csv("predicted.csv", mode='a', header= False)
 
 
 if __name__ == "__main__":
     tidf_grams = tidf_n_grams()
     all_features_of_all_users = get_all_features_of_all_users(tidf_grams)
-    train_model(0, all_features_of_all_users)
+    for user_id in range(0, USER_COUNT):
+        train_model(user_id, all_features_of_all_users)
 
