@@ -13,7 +13,7 @@ SEGMENT_COUNT = 150
 TRAIN_SEGMENT_COUNT = 50
 feature_number = 1000
 segments_of_other_users = 2
-num_of_estimatiors = 30
+num_of_estimatiors = 80
 # returns a dictinary of the words in dict with the occurance of them in specific segment
 def count_word_occurrence(dict, segment):
     for word in segment:
@@ -151,13 +151,13 @@ def calculate_grade():
     true_positive = 0
     true_negative = 0
     for i in range(0, 10):
-        check_true_positive = list(
-            (real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 1))
+        check_true_positive = list((real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 1))
         true_positive = true_positive + check_true_positive.count(True)
-        check_true_negative = list(
-            (real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 0))
+        check_predicted_ones = list(predicted_train_user_test.iloc[i] == 1)
+        false_positive = check_predicted_ones.count(True) - check_true_positive.count(True)
+        check_true_negative = list((real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 0))
         true_negative = true_negative + check_true_negative.count(True)
-        print(f'true_positive: {check_true_positive.count(True)} true_negative: {check_true_negative.count(True)}')
+        print(f'true_positive: {check_true_positive.count(True)} true_negative: {check_true_negative.count(True)} false positive: {false_positive}')
 
     classification_score = true_negative + true_positive * 9
     print(f'ones: {true_positive} zeroes:{true_negative}  classification_score: {classification_score}')

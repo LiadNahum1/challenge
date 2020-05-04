@@ -18,6 +18,6 @@ if __name__ == "__main__":
     ones = all_data_frame.count(1)
     zeroes = all_data_frame.count(0)
     classification_score = zeroes + min(ones, ONES)*9 #assuming all True ones are predicted
-    print(f'ones: {ones} zeroes:{zeroes}  classification_score: {classification_score}')
-    #grade = 0.7*(min(100, (classification_score/4575)*95))
-    #print(grade)
+    print(f'ones: {min(ones, ONES)} zeroes:{zeroes}  classification_score: {classification_score}')
+    grade = 0.7*(min(100, (classification_score/4575)*95))
+    print(grade)
