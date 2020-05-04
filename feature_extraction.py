@@ -1,4 +1,5 @@
 import collections
+import os
 
 import numpy as np
 from sklearn import metrics, svm, linear_model
@@ -12,7 +13,7 @@ SEGMENT_COUNT = 150
 TRAIN_SEGMENT_COUNT = 50
 feature_number = 1000
 segments_of_other_users = 2
-num_of_estimatiors = 80
+num_of_estimatiors = 30
 # returns a dictinary of the words in dict with the occurance of them in specific segment
 def count_word_occurrence(dict, segment):
     for word in segment:
@@ -136,17 +137,35 @@ def train_model(user_id, all_features_of_all_users):
     text_clf.fit(X_train, train_labels)
     X_test = pd.DataFrame(data=test_set)
     predicted = text_clf.predict(X_test)
-    print(user_id)
-    print(predicted)
-    print(collections.Counter(predicted))
+    #print(user_id)
+    #print(predicted)
+    #print(collections.Counter(predicted))
     predicted = pd.DataFrame(predicted)
     predicted = predicted.T
-    predicted.to_csv("predicted.csv", mode='a', header= False)
+    predicted.to_csv("predicted.csv", mode='a', header= False, index=False)
 
+def calculate_grade():
+    real_train_user_test = pd.read_csv('train_users.csv', header=None)
+    predicted_train_user_test = pd.read_csv('predicted.csv', header=None)
+    predicted_train_user_test = predicted_train_user_test.iloc[0:10, :]
+    true_positive = 0
+    true_negative = 0
+    for i in range(0, 10):
+        check_true_positive = list(
+            (real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 1))
+        true_positive = true_positive + check_true_positive.count(True)
+        check_true_negative = list(
+            (real_train_user_test.iloc[i] == predicted_train_user_test.iloc[i]) & (real_train_user_test.iloc[i] == 0))
+        true_negative = true_negative + check_true_negative.count(True)
+        print(f'true_positive: {check_true_positive.count(True)} true_negative: {check_true_negative.count(True)}')
+
+    classification_score = true_negative + true_positive * 9
+    print(f'ones: {true_positive} zeroes:{true_negative}  classification_score: {classification_score}')
 
 if __name__ == "__main__":
+    os.remove("predicted.csv")
     tidf_grams = tidf_n_grams()
     all_features_of_all_users = get_all_features_of_all_users(tidf_grams)
     for user_id in range(0, USER_COUNT):
         train_model(user_id, all_features_of_all_users)
-
+    calculate_grade()
