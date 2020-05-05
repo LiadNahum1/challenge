@@ -131,10 +131,10 @@ def build_train_set(user_id, all_features_of_all_users):
 def find_top_20(probs):
     ones = []
     for prob in probs:
-        if prob >= 0.5 :
+        if prob >= 0.5:
             ones = ones + [prob]
     
-    while len(ones) > 10 :
+    while len(ones) > 15:
         ones.remove(min(ones))
 
     return min(ones)
@@ -153,15 +153,13 @@ def train_model(user_id, all_features_of_all_users):
     predicted_prob = text_clf.predict_proba(X_test)[:,1]
     max20 = find_top_20(predicted_prob.copy())
 
-
     count = 0
-    for pred in predicted : 
-        if pred == 1 & (predicted_prob[count] >= max20) :
+    for pred in predicted:
+        if (pred == 1) & (predicted_prob[count] >= max20) :
             predicted[count] = 1
-        elif pred == 1 :
+        elif pred == 1:
             predicted[count] = 0
-        count = count + 1 
-
+        count = count + 1
 
     #print(user_id)
     #print(predicted)
@@ -189,7 +187,7 @@ def calculate_grade():
     print(f'ones: {true_positive} zeroes:{true_negative}  classification_score: {classification_score}')
 
 if __name__ == "__main__":
-    #os.remove("predicted.csv")
+    os.remove("predicted.csv")
     tidf_grams = tidf_n_grams()
     all_features_of_all_users = get_all_features_of_all_users(tidf_grams)
     for user_id in range(0, USER_COUNT):
