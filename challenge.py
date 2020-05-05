@@ -127,6 +127,18 @@ def build_train_set(user_id, all_features_of_all_users):
             train_labels.extend(list(np.ones(segments_of_other_users)))
     return train_set, train_labels
 
+
+def find_top_20(probs):
+    ones = []
+    for prob in probs:
+        if prob >= 0.5 :
+            ones = ones + [prob]
+    
+    while len(ones) > 10 :
+        ones.remove(min(ones))
+
+    return min(ones)
+
 def train_model(user_id, all_features_of_all_users):
     all_features_of_id = all_features_of_all_users[user_id]
     train_set, train_labels = build_train_set(user_id, all_features_of_all_users)
@@ -137,6 +149,20 @@ def train_model(user_id, all_features_of_all_users):
     text_clf.fit(X_train, train_labels)
     X_test = pd.DataFrame(data=test_set)
     predicted = text_clf.predict(X_test)
+
+    predicted_prob = text_clf.predict_proba(X_test)[:,1]
+    max20 = find_top_20(predicted_prob.copy())
+
+
+    count = 0
+    for pred in predicted : 
+        if pred == 1 & (predicted_prob[count] >= max20) :
+            predicted[count] = 1
+        elif pred == 1 :
+            predicted[count] = 0
+        count = count + 1 
+
+
     #print(user_id)
     #print(predicted)
     #print(collections.Counter(predicted))
@@ -163,7 +189,7 @@ def calculate_grade():
     print(f'ones: {true_positive} zeroes:{true_negative}  classification_score: {classification_score}')
 
 if __name__ == "__main__":
-    os.remove("predicted.csv")
+    #os.remove("predicted.csv")
     tidf_grams = tidf_n_grams()
     all_features_of_all_users = get_all_features_of_all_users(tidf_grams)
     for user_id in range(0, USER_COUNT):
